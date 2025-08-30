@@ -13,10 +13,20 @@ import py7zr
 import io
 import shutil
 
-#Update checker
-import requests
-from tkinter import messagebox
 
+
+def get_local_path(relative_path):
+    """
+    Returns a path relative to the script (or exe) location.
+    Works in development and after building the .exe.
+    """
+    if getattr(sys, "frozen", False):
+        # Running as .exe
+        base_path = os.path.dirname(sys.executable)
+    else:
+        # Running as .py script
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, relative_path)
 
 APP_VERSION = "1.0.0"  # Current app version
 def check_for_update():
@@ -43,7 +53,7 @@ def check_for_update():
 
 
 # Path to local JSON
-LOCAL_JSON = os.path.join(os.path.dirname(__file__), "quickcodes.json")
+LOCAL_JSON = get_local_path("quickcodes.json")
 GITHUB_JSON_URL = "https://raw.githubusercontent.com/alfizari/PS4-Cheats-Maker/main/quickcodes.json"
 
 def download_latest_quickcodes():
@@ -114,10 +124,10 @@ def download_latest_7z_folder(zip_url, local_folder):
         messagebox.showerror("Extraction Failed", f"Downloaded .7z file is invalid:\n{e}")
 
 
-LOCAL_PYTHON_DIR = os.path.join(os.path.dirname(__file__), "python_scripts")
+LOCAL_PYTHON_DIR = get_local_path("python_scripts")
 GITHUB_PYTHON_7Z = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/python_scripts.7z"
 
-LOCAL_LUA_DIR = os.path.join(os.path.dirname(__file__), "lua_scripts")
+LOCAL_LUA_DIR = get_local_path("lua_scripts")
 GITHUB_LUA_ZIP = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/lua_scripts.zip"
 
 def download_latest_python_scripts():
@@ -150,7 +160,7 @@ root.after(1000, check_for_update)  # wait 1 second before checking
 # Load  logo
 # Directory where the logo is stored
 
-logo_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo")
+logo_dir = get_local_path("logo")
 ico_path = os.path.join(logo_dir, "logo.ico")
 
 root.iconbitmap(ico_path) 
@@ -164,13 +174,13 @@ root.iconphoto(True, logo)
 
 
 # Ensure folder exists
-PYTHON_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "python_scripts")
+PYTHON_SCRIPTS_DIR = get_local_path("python_scripts")
 if not os.path.exists(PYTHON_SCRIPTS_DIR):
     os.makedirs(PYTHON_SCRIPTS_DIR)
 
 
-json_dir = os.path.dirname(os.path.abspath(__file__))
-jsons = os.path.join(json_dir, "built_in_functions.json")
+
+jsons = get_local_path("built_in_functions.json")
 def create_new_script():
     """Create a new empty script template and load it into editor"""
     cusa = cusa_var.get()
@@ -718,7 +728,7 @@ apply()
 lua = LuaRuntime(unpack_returned_tuples=True)
 
 
-LUA_SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lua_scripts")
+LUA_SCRIPTS_DIR = get_local_path("lua_scripts")
 if not os.path.exists(LUA_SCRIPTS_DIR):
     os.makedirs(LUA_SCRIPTS_DIR)
 
@@ -984,8 +994,7 @@ def ask_current_cusa():
 
 def load_codes(json_file="quickcodes.json"):
     """Load all quick codes from JSON file."""
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(script_dir, json_file)
+    json_path = get_local_path(json_file)
 
     if not os.path.exists(json_path):
         print(f'JSON file not found: {json_path}')
@@ -1132,8 +1141,8 @@ def save_quick_code():
     codes_dict[name] = {"code": quick_code, "author": author}
 
     # Save back to JSON
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(script_dir, "quickcodes.json")
+
+    json_path =  get_local_path("quickcodes.json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump({"codes": all_codes}, f, indent=4)
 
@@ -1542,8 +1551,7 @@ DARK_MODE = {
     "text_bg": "#1e1e1e",     # ScrolledText background
     "text_fg": "#00ff00",     # terminal text
 }
-import tkinter as tk
-from tkinter import ttk, scrolledtext
+
 
 def apply_dark_mode(widget):
     try:
