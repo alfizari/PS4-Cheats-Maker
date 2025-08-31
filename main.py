@@ -10,8 +10,8 @@ import helpers  # Assuming helpers.py is in the same directory
 import sys
 import requests
 import py7zr
-import io
 import shutil
+import webbrowser
 
 
 
@@ -28,28 +28,6 @@ def get_local_path(relative_path):
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
-APP_VERSION = "1.0.0"  # Current app version
-def check_for_update():
-    try:
-        url = f"https://github.com/alfizari/PS4-Cheats-Maker/releases/latest"
-        response = requests.get(url)
-        response.raise_for_status()
-        latest = response.json()
-        latest_version = latest["tag_name"]  # e.g., "v1.3.0"
-        
-        if latest_version.startswith("v"):
-            latest_version = latest_version[1:]  # remove leading 'v'
-        
-        if latest_version != APP_VERSION:
-            messagebox.showinfo(
-                "Update Available",
-                f"A new version is available!\nCurrent: {APP_VERSION}\nLatest: {latest_version}\n\nVisit the GitHub page to download it."
-            )
-        else:
-            messagebox.showinfo("No Update", "You are running the latest version.")
-            
-    except Exception as e:
-        messagebox.showerror("Update Check Failed", f"Could not check for updates:\n{e}")
 
 
 # Path to local JSON
@@ -82,6 +60,13 @@ def download_latest_7z_folder(zip_url, local_folder):
     are extracted directly into the target folder to avoid nested folders.
     """
     try:
+        proceed = messagebox.askyesno(
+            "Confirm Update",
+            f"This will replace any existing scripts '{os.path.basename(local_folder)}'.\nDo you want to continue?",
+        )
+        if not proceed:
+            return
+
         response = requests.get(zip_url)
         response.raise_for_status()
 
@@ -128,7 +113,7 @@ LOCAL_PYTHON_DIR = get_local_path("python_scripts")
 GITHUB_PYTHON_7Z = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/python_scripts.7z"
 
 LOCAL_LUA_DIR = get_local_path("lua_scripts")
-GITHUB_LUA_ZIP = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/lua_scripts.zip"
+GITHUB_LUA_ZIP = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/lua_scripts.7z"
 
 def download_latest_python_scripts():
     download_latest_7z_folder(GITHUB_PYTHON_7Z, LOCAL_PYTHON_DIR)
@@ -140,7 +125,7 @@ def download_latest_lua_scripts():
 
 # Main window
 root = tk.Tk()
-root.title("Save Editor")
+root.title("Cheat Maker PS4")
 root.geometry("800x500")
 
 # ====== Menu Bar ======
@@ -153,23 +138,24 @@ game_name_var = tk.StringVar()
 quick_code_var = tk.StringVar()
 cusa_to_game = {}
 data = None  # Will hold the loaded save file data
-root.after(1000, check_for_update)  # wait 1 second before checking
 
 
-#
-# Load  logo
-# Directory where the logo is stored
 
 logo_dir = get_local_path("logo")
 ico_path = os.path.join(logo_dir, "logo.ico")
-
-root.iconbitmap(ico_path) 
-
-
 png_path = os.path.join(logo_dir, "logo.png")
-logo = PhotoImage(file=png_path)
-root.iconphoto(True, logo)
-##  
+
+# Try ico first
+if os.path.exists(ico_path):
+    try:
+        root.iconbitmap(ico_path)
+    except Exception as e:
+        print(f"Failed to load ico: {e}")
+
+# Fallback to PNG
+if os.path.exists(png_path):
+    logo = PhotoImage(file=png_path)
+    root.iconphoto(True, logo)
 
 
 
@@ -1247,6 +1233,50 @@ update_menu.add_command(label="Update Python Script List", command=download_late
 update_menu.add_command(label="Update Lua Script List", command=download_latest_lua_scripts)
 menubar.add_cascade(label="Update Cheats", menu=update_menu)
 
+# Help menu
+def show_about():
+    about_window = tk.Toplevel(root)
+    about_window.title("About")
+    about_window.geometry("350x150")
+    about_window.resizable(False, False)
+
+    tk.Label(about_window, text="Save Editor v1.0", font=("Segoe UI", 12, "bold")).pack(pady=(10, 0))
+    tk.Label(about_window, text="Developed by Alfazari911").pack(pady=(5, 0))
+    tk.Label(about_window, text="Github:", font=("Segoe UI", 10)).pack(pady=(10, 0))
+
+    def open_github():
+        webbrowser.open("https://github.com/alfizari/PS4-Cheats-Maker")
+
+    link = tk.Label(about_window, text="https://github.com/alfizari/PS4-Cheats-Maker", fg="blue", cursor="hand2")
+    link.pack()
+    link.bind("<Button-1>", lambda e: open_github())
+
+def help_decrypt():
+    messagebox.showinfo("How to Decrypt Saves", "To decrypt PS4 saves, You Could Use Free Tools Such As PS Bot discord or Apollo tool. Paid tools like Save Wizard also work well.\n\nMake sure to back up your saves before modifying them!")
+
+def show_documentation():
+    doc_window = tk.Toplevel(root)
+    doc_window.title("About")
+    doc_window.geometry("350x150")
+    doc_window.resizable(False, False)
+
+    tk.Label(doc_window, text="Built in functions", font=("Segoe UI", 12, "bold")).pack(pady=(10, 0))
+    tk.Label(doc_window, text="Github:", font=("Segoe UI", 10)).pack(pady=(10, 0))
+
+    def open_github():
+        webbrowser.open("https://github.com/alfizari/PS4-Cheats-Maker/blob/main/helpers.py")
+
+    link = tk.Label(doc_window, text="https://github.com/alfizari/PS4-Cheats-Maker/blob/main/helpers.py", fg="blue", cursor="hand2")
+    link.pack()
+    link.bind("<Button-1>", lambda e: open_github())
+
+
+
+help_menu = tk.Menu(menubar, tearoff=0)
+help_menu.add_command(label="About", command=show_about)
+help_menu.add_command(label="How to Decrypt Saves", command=help_decrypt)
+help_menu.add_command(label="Documentation", command=show_documentation)
+menubar.add_cascade(label="Help", menu=help_menu)
 # Apply the menu
 root.config(menu=menubar)
 
