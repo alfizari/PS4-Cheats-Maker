@@ -32,6 +32,8 @@ Clicking **Update Scripts** will replace any existing scripts you have with thos
 
 - Documentation for built-in functions can be found here:  
   [helpers.py](https://github.com/alfizari/PS4-Cheats-Maker/blob/main/helpers.py)  
+- Example
+  <img width="1889" height="1004" alt="image" src="https://github.com/user-attachments/assets/62ece646-04fb-4b1d-bf42-e7920e2431a3" />
 
 ---
 
