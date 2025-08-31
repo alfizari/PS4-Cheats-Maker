@@ -6,7 +6,7 @@ from quickcodes import QuickCodes
 import re
 import asyncio
 from lupa import LuaRuntime
-import helpers  # Assuming helpers.py is in the same directory
+import helpers 
 import sys
 import requests
 import py7zr
@@ -36,6 +36,12 @@ GITHUB_JSON_URL = "https://raw.githubusercontent.com/alfizari/PS4-Cheats-Maker/m
 
 def download_latest_quickcodes():
     try:
+        proceed = messagebox.askyesno(
+        "Confirm Update",
+        f"This will replace any existing file, Do you wish to continue?",
+        )
+        if not proceed:
+            return
         response = requests.get(GITHUB_JSON_URL)
         response.raise_for_status()  # raise error if request failed
 
@@ -51,6 +57,32 @@ def download_latest_quickcodes():
     except requests.RequestException as e:
         messagebox.showerror("Download Failed", f"Could not download quick codes:\n{e}")
 
+LOCAL_func_py = get_local_path("helpers.py")
+GITHUB_func_py = "https://raw.githubusercontent.com/alfizari/PS4-Cheats-Maker/main/helpers.py"
+
+LOCAL_func_json = get_local_path("built_in_functions.json")
+GITHUB_func_json = "https://raw.githubusercontent.com/alfizari/PS4-Cheats-Maker/main/built_in_functions.json"
+
+def download_latest_built_in_functions(GITHUB_FUNC_LINK, LOCAL_PATH):
+    try:
+        response = requests.get(GITHUB_FUNC_LINK)
+        response.raise_for_status()  # raise error if request failed
+
+        # Write the downloaded JSON to local file
+        with open(LOCAL_PATH, "wb") as f:
+            f.write(response.content)
+
+        messagebox.showinfo("Success", "Built_In_Functions updated successfully!")
+        
+        # Optional: reload the quick codes in your app
+        update_quick_codes()  
+
+    except requests.RequestException as e:
+        messagebox.showerror("Download Failed", f"Could not download quick codes:\n{e}")
+
+def update_func():
+    download_latest_built_in_functions(GITHUB_func_py, LOCAL_func_py)
+    download_latest_built_in_functions(GITHUB_func_json,LOCAL_func_json)
 
 
 def download_latest_7z_folder(zip_url, local_folder):
@@ -123,6 +155,17 @@ def download_latest_lua_scripts():
     download_latest_7z_folder(GITHUB_LUA_ZIP, LOCAL_LUA_DIR)
     load_cheat_buttons()   # reload lua scripts in GUI
 
+def update_all():
+    proceed = messagebox.askyesno(
+        "Confirm Update",
+        f"This will replace any existing file, Do you wish to continue?",
+    )
+    if not proceed:
+        return
+    download_latest_python_scripts()
+    download_latest_lua_scripts()
+    update_func()
+    download_latest_quickcodes()
 # Main window
 root = tk.Tk()
 root.title("Cheat Maker PS4")
@@ -1228,9 +1271,11 @@ menubar.add_cascade(label="Background", menu=view_menu)
 
 # ===== Update menu =====
 update_menu = tk.Menu(menubar, tearoff=0)
+update_menu.add_command(label="Update ALL", command=update_all)
 update_menu.add_command(label="Update QuickCodes List", command=download_latest_quickcodes)
 update_menu.add_command(label="Update Python Script List", command=download_latest_python_scripts)
 update_menu.add_command(label="Update Lua Script List", command=download_latest_lua_scripts)
+update_menu.add_command(label="Update Built_in_functions", command=update_func)
 menubar.add_cascade(label="Update Cheats", menu=update_menu)
 
 # Help menu
