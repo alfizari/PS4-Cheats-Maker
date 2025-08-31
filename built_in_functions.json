@@ -2,6 +2,7 @@
   {"name": "search_for", "template": "offset = search_for(start_offset, end_offset, pattern, save_data)\n"},
   {"name": "read_offset", "template": "value = read_offset(offset, save_data, length=4)\n"},
   {"name": "write_offset", "template": "write_offset(offset, value, save_data, length=4)\n"},
+  {"name": "write_offset_loop", "template": "write_offset_loop(start_loop_offset, end_loop_offset, increment_by, value, data, length= 4)\n"},
   {"name": "read_float", "template": "value = read_float(offset, save_data)\n"},
   {"name": "write_float", "template": "write_float(offset, value, save_data)\n"},
   {"name": "read_double", "template": "value = read_double(offset, save_data)\n"},
