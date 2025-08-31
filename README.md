@@ -99,4 +99,5 @@ pyinstaller --noconsole --onefile --icon=logo/logo.ico --collect-all lupa main.p
 ## 🙌 Credits  
 
 - Quick code script by [@HZH](https://github.com/hzhreal)  
-  Found at: [HTOS/quickcodes.py](https://github.com/hzhreal/HTOS/blob/bbf9df3c38bbcc84464d71213d38ce29471001db/app_core/quickcodes.py)  
+  Found at: [HTOS/quickcodes.py](https://github.com/hzhreal/HTOS/blob/bbf9df3c38bbcc84464d71213d38ce29471001db/app_core/quickcodes.py)
+- CUSA list from: https://discord.gg/save-wizard
