@@ -51,8 +51,34 @@ def download_latest_quickcodes():
 
         messagebox.showinfo("Success", "Quick codes updated successfully!")
         
-        # Optional: reload the quick codes in your app
+
         update_quick_codes()  
+
+    except requests.RequestException as e:
+        messagebox.showerror("Download Failed", f"Could not download quick codes:\n{e}")
+
+
+LOCAL_txt = get_local_path("cusa_list.txt")
+GITHUB_txt_URL = "https://raw.githubusercontent.com/alfizari/PS4-Cheats-Maker/main/cusa_list.txt"
+def download_latest_CUSA():
+    try:
+        proceed = messagebox.askyesno(
+        "Confirm Update",
+        f"This will replace any existing file, Do you wish to continue?",
+        )
+        if not proceed:
+            return
+        response = requests.get(GITHUB_txt_URL)
+        response.raise_for_status()  # raise error if request failed
+
+   
+        with open(LOCAL_txt, "wb") as f:
+            f.write(response.content)
+
+        messagebox.showinfo("Success", "CUSA updated successfully!")
+        
+        # Optional: reload the quick codes in your app
+        load_cusa_game_mapping()
 
     except requests.RequestException as e:
         messagebox.showerror("Download Failed", f"Could not download quick codes:\n{e}")
@@ -74,8 +100,9 @@ def download_latest_built_in_functions(GITHUB_FUNC_LINK, LOCAL_PATH):
 
         messagebox.showinfo("Success", "Built_In_Functions updated successfully!")
         
-        # Optional: reload the quick codes in your app
-        update_quick_codes()  
+
+        load_built_in_functions(jsons)
+        run_python_script_auto()
 
     except requests.RequestException as e:
         messagebox.showerror("Download Failed", f"Could not download quick codes:\n{e}")
@@ -166,6 +193,7 @@ def update_all():
     download_latest_lua_scripts()
     update_func()
     download_latest_quickcodes()
+    download_latest_CUSA()
 # Main window
 root = tk.Tk()
 root.title("Cheat Maker PS4")
@@ -982,8 +1010,7 @@ def run_lua_file(path):
 def load_cusa_game_mapping(filename="cusa_list.txt"):
 
     global cusa_to_game
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    text_path = os.path.join(script_dir, filename)
+    text_path = get_local_path(filename)
     
     if not os.path.exists(text_path):
         print(f"CUSA mapping file not found: {text_path}")
@@ -1276,6 +1303,7 @@ update_menu.add_command(label="Update QuickCodes List", command=download_latest_
 update_menu.add_command(label="Update Python Script List", command=download_latest_python_scripts)
 update_menu.add_command(label="Update Lua Script List", command=download_latest_lua_scripts)
 update_menu.add_command(label="Update Built_in_functions", command=update_func)
+update_menu.add_command(label="Update CUSA game list", command=download_latest_CUSA)
 menubar.add_cascade(label="Update Cheats", menu=update_menu)
 
 # Help menu
