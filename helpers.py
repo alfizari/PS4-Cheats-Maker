@@ -30,6 +30,15 @@ def write_offset(offset: int, value: int, data: bytearray, length: int = 4) -> N
     """Write a value to data at a given offset"""
     data[offset:offset+length] = value.to_bytes(length, "little")
 
+def write_offset_loop(start_loop_offset: int, end_loop_offset: int, increment_by: int, value: int, data: bytearray, length: int = 4) -> None:
+    """
+    Write a value to data at each offset between start_loop_offset and end_loop_offset,
+    incrementing by increment_by each time.
+    """
+    for offset in range(start_loop_offset, end_loop_offset + 1, increment_by):
+        data[offset:offset + length] = value.to_bytes(length, "little")
+
+
 # Extended helper functions
 
 def read_float(offset: int, data: bytes) -> float:
