@@ -1,6 +1,6 @@
 # 🎮 PS4-Cheats-Maker  
 
-An easy-to-use app for working with **Save Wizard quick codes** and **custom scripts** for PS4 game saves.  
+An easy-to-use app for working with **Save Wizard quick codes** and **custom scripts** for PS4/PS3/PS2/PS or any game saves.  
 It accepts decrypted saves, knowing the CUSA is required. It will treat different CUSA's for the same game as one.
 My Discord: alfazari911
 If you want to share your scripts, make a pull request.
