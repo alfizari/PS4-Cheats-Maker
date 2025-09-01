@@ -1,3 +1,4 @@
+import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk, PhotoImage
 import os
@@ -15,6 +16,46 @@ import webbrowser
 
 
 
+
+#Checksum
+def is_there_checksum(game_name):
+    # Will run only of the txt for that game exists 
+    try:
+        check_dir = get_local_path("checksum")
+        txt_path = os.path.join(check_dir, f"{game_name}.txt")
+        
+        # Check if file exists
+        if not os.path.exists(txt_path):
+            return
+        # Read the code
+        with open(txt_path, "r", encoding="utf-8") as f:
+            code = f.read()
+        
+        # Prepare execution environment with helper functions and current context
+        globals_dict = {
+            "__builtins__": __builtins__,
+            "save_data": current_save_data, 
+            "current_cusa": cusa_var.get() if 'cusa_var' in globals() else None,
+        }
+        
+        # Add all helper functions automatically
+        globals_dict.update(get_helper_globals())
+        
+        # Execute the checksum code
+        exec(code, globals_dict)
+        
+        return True
+        
+    except FileNotFoundError as e:
+        print(f"File error: {e}")
+        return False
+    except Exception as e:
+        print(f"Error executing checksum code for {game_name}: {e}")
+        return False
+
+
+#dirc
+
 def get_local_path(relative_path):
     """
     Returns a path relative to the script (or exe) location.
@@ -29,6 +70,8 @@ def get_local_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
+
+##GITHUB stuff
 
 # Path to local JSON
 LOCAL_JSON = get_local_path("quickcodes.json")
@@ -83,6 +126,8 @@ def download_latest_CUSA():
     except requests.RequestException as e:
         messagebox.showerror("Download Failed", f"Could not download quick codes:\n{e}")
 
+
+
 LOCAL_func_py = get_local_path("helpers.py")
 GITHUB_func_py = "https://raw.githubusercontent.com/alfizari/PS4-Cheats-Maker/main/helpers.py"
 
@@ -114,14 +159,14 @@ def update_func():
 
 def download_latest_7z_folder(zip_url, local_folder):
     """
-    Downloads a .7z from GitHub and replaces the local folder.
-    If the archive contains a top-level folder, its contents
-    are extracted directly into the target folder to avoid nested folders.
+    Alternative version that creates a backup of replaced files
     """
     try:
         proceed = messagebox.askyesno(
             "Confirm Update",
-            f"This will replace any existing scripts '{os.path.basename(local_folder)}'.\nDo you want to continue?",
+            f"This will update scripts in '{os.path.basename(local_folder)}'.\n"
+            f"Files with the same name will be replaced (backup created).\n"
+            f"Other existing files will be preserved.\nDo you want to continue?",
         )
         if not proceed:
             return
@@ -129,43 +174,103 @@ def download_latest_7z_folder(zip_url, local_folder):
         response = requests.get(zip_url)
         response.raise_for_status()
 
-        # Remove old folder
-        if os.path.exists(local_folder):
-            shutil.rmtree(local_folder)
+        # Create target folder if it doesn't exist
         os.makedirs(local_folder, exist_ok=True)
+
+        # Create backup folder for replaced files
+        backup_folder = f"{local_folder}_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         # Write to temporary .7z file
         temp_file = os.path.join(os.path.dirname(__file__), "__temp.7z")
         with open(temp_file, "wb") as f:
             f.write(response.content)
 
+        # Create temporary extraction directory
+        temp_extract_dir = os.path.join(os.path.dirname(__file__), "__temp_extract")
+        
         # Open the archive
         with py7zr.SevenZipFile(temp_file, mode='r') as archive:
             all_files = archive.getnames()
 
             # Detect top-level folder
             top_level_folders = set(f.split('/')[0] for f in all_files if f.strip() != "")
+            
             if len(top_level_folders) == 1:
-                # Extract to temporary folder
-                temp_dir = os.path.join(os.path.dirname(__file__), "__temp_extract")
-                archive.extractall(path=temp_dir)
-                extracted_folder = os.path.join(temp_dir, list(top_level_folders)[0])
-
-                # Move contents into target folder
-                for item in os.listdir(extracted_folder):
-                    shutil.move(os.path.join(extracted_folder, item), local_folder)
-                shutil.rmtree(temp_dir)
+                # Extract to temporary folder first
+                archive.extractall(path=temp_extract_dir)
+                extracted_folder = os.path.join(temp_extract_dir, list(top_level_folders)[0])
+                source_folder = extracted_folder
             else:
-                # Extract directly if no single top-level folder
-                archive.extractall(path=local_folder)
+                # Extract directly to temp folder if no single top-level folder
+                archive.extractall(path=temp_extract_dir)
+                source_folder = temp_extract_dir
 
-        os.remove(temp_file)
-        messagebox.showinfo("Success", f"{os.path.basename(local_folder)} updated successfully!")
+            # Copy files with backup
+            copy_files_with_backup(source_folder, local_folder, backup_folder)
+
+        # Clean up temporary files
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+        if os.path.exists(temp_extract_dir):
+            shutil.rmtree(temp_extract_dir)
+            
+        backup_msg = f"\nBackup created: {os.path.basename(backup_folder)}" if os.path.exists(backup_folder) else ""
+        messagebox.showinfo("Success", f"{os.path.basename(local_folder)} updated successfully!{backup_msg}")
 
     except requests.RequestException as e:
         messagebox.showerror("Download Failed", f"Could not download {os.path.basename(local_folder)}:\n{e}")
     except py7zr.exceptions.Bad7zFile as e:
         messagebox.showerror("Extraction Failed", f"Downloaded .7z file is invalid:\n{e}")
+    except Exception as e:
+        messagebox.showerror("Update Failed", f"Failed to update {os.path.basename(local_folder)}:\n{e}")
+
+def copy_files_with_backup(source_folder, target_folder, backup_folder):
+    """
+    Copy files from source to target with backup of replaced files.
+    """
+    backup_created = False
+    
+    for root, dirs, files in os.walk(source_folder):
+        # Calculate relative path from source folder
+        rel_path = os.path.relpath(root, source_folder)
+        
+        # Create corresponding directory structure in target
+        if rel_path != '.':
+            target_dir = os.path.join(target_folder, rel_path)
+        else:
+            target_dir = target_folder
+            
+        os.makedirs(target_dir, exist_ok=True)
+        
+        # Copy all files from this directory
+        for file in files:
+            source_file = os.path.join(root, file)
+            target_file = os.path.join(target_dir, file)
+            
+            try:
+                # Create backup if file already exists
+                if os.path.exists(target_file):
+                    if not backup_created:
+                        os.makedirs(backup_folder, exist_ok=True)
+                        backup_created = True
+                    
+                    # Create backup directory structure
+                    if rel_path != '.':
+                        backup_dir = os.path.join(backup_folder, rel_path)
+                    else:
+                        backup_dir = backup_folder
+                    os.makedirs(backup_dir, exist_ok=True)
+                    
+                    backup_file = os.path.join(backup_dir, file)
+                    shutil.copy2(target_file, backup_file)
+                    print(f"Backed up: {os.path.relpath(target_file, target_folder)}")
+                
+                # Copy new file
+                shutil.copy2(source_file, target_file)
+                print(f"Updated: {os.path.relpath(target_file, target_folder)}")
+                
+            except Exception as e:
+                print(f"Failed to copy {file}: {e}")
 
 
 LOCAL_PYTHON_DIR = get_local_path("python_scripts")
@@ -174,6 +279,9 @@ GITHUB_PYTHON_7Z = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/python
 LOCAL_LUA_DIR = get_local_path("lua_scripts")
 GITHUB_LUA_ZIP = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/lua_scripts.7z"
 
+LOCAL_check_DIR = get_local_path("checksum")
+GITHUB_check_ZIP = "https://github.com/alfizari/PS4-Cheats-Maker/raw/main/checksum.7z"
+
 def download_latest_python_scripts():
     download_latest_7z_folder(GITHUB_PYTHON_7Z, LOCAL_PYTHON_DIR)
     load_python_scripts()  # reload in GUI
@@ -181,6 +289,9 @@ def download_latest_python_scripts():
 def download_latest_lua_scripts():
     download_latest_7z_folder(GITHUB_LUA_ZIP, LOCAL_LUA_DIR)
     load_cheat_buttons()   # reload lua scripts in GUI
+
+def download_latest_check_scripts():
+    download_latest_7z_folder(GITHUB_check_ZIP, LOCAL_check_DIR)
 
 def update_all():
     proceed = messagebox.askyesno(
@@ -194,6 +305,12 @@ def update_all():
     update_func()
     download_latest_quickcodes()
     download_latest_CUSA()
+    download_latest_check_scripts()
+
+################################################33
+
+
+
 # Main window
 root = tk.Tk()
 root.title("Cheat Maker PS4")
@@ -1003,7 +1120,41 @@ def run_lua_file(path):
 
 ######################################3
 
+def add_id_to_list():
+    filename = "cusa_list.txt"
+    text_path = get_local_path(filename)
 
+    # Create a temporary root window (hidden)
+    root = tk.Tk()
+    root.withdraw()
+
+    game_id = simpledialog.askstring("Add Game", "Enter Game ID: No spaces or _")
+    if not game_id:
+        messagebox.showwarning("Canceled", "No Game ID entered.")
+        return
+
+    game_name = simpledialog.askstring("Add Game", "Enter Game Name:")
+    if not game_name:
+        messagebox.showwarning("Canceled", "No Game Name entered.")
+        return
+
+    entry = f"{game_id.strip()}//{game_name.strip()}"
+
+    # Check if already in the file
+    try:
+        with open(text_path, "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f]
+            if entry in lines:
+                messagebox.showinfo("Duplicate", "⚠️ Entry already exists in the list.")
+                return
+    except FileNotFoundError:
+        lines = []
+
+    # Append entry
+    with open(text_path, "a", encoding="utf-8") as f:
+        f.write(entry + "\n")
+
+    messagebox.showinfo("Success", f"✅ Added:\n{entry}")
 
 #MAIN SCRIPT FUNCTIONS
 
@@ -1114,6 +1265,8 @@ def save_file_handler():
 
 
         path = file_path.get()
+        game_name=game_name_var.get()
+        is_there_checksum(game_name)
         with open(path, "wb") as f:
             f.write(current_save_data)
 
@@ -1136,6 +1289,8 @@ def save_as_file_handler():
             initialfile=base_name,
             filetypes=[("All files", "*.*")]
         )
+        game_name=game_name_var.get()
+        is_there_checksum(game_name)
         with open(output_path, "wb") as f:
             f.write(current_save_data)
 
@@ -1208,19 +1363,37 @@ def save_quick_code():
 
 
 def apply_quick_codes(quick_codes: str):
+    global current_save_data  # Make sure we can modify the global
+    
     save_path = file_path.get()
     if not save_path:
         print("No save file selected!")
         messagebox.showwarning("Warning", "No save file selected!")
         return
+    
     try:
-        qc = QuickCodes(file_path.get(), quick_codes)
+        # Apply quick codes
+        qc = QuickCodes(save_path, quick_codes)
         asyncio.run(qc.apply_code())
         asyncio.run(qc.write_file())
-        messagebox.showinfo("Success", "Quick code applied successfully to current file. Saving not rquired!")
+        
+        # Read the updated file into global current_save_data
+        with open(save_path, 'rb') as f:  
+            current_save_data = bytearray(f.read()) 
+        
+        # Apply checksum if needed
+        game_name = game_name_var.get()
+        is_there_checksum(game_name)
+        
+        # Write the final data (with checksum)
+        with open(save_path, "wb") as f:
+            f.write(current_save_data)
+            
+        messagebox.showinfo("Success", "Quick code applied successfully to current file. Saving not required!")
+        
     except Exception as e:
-        print(f"Error: {e}")
-        messagebox.showerror("Error", f"Failed to apply code: {e}")
+        print(f"Error applying quick codes: {e}")
+        messagebox.showerror("Error", f"Failed to apply quick codes: {str(e)}")
 
 def update_quick_codes():
     # Clear old buttons (except the label)
@@ -1288,6 +1461,7 @@ file_menu = tk.Menu(menubar, tearoff=0)
 file_menu.add_command(label="Open", command=open_file)
 file_menu.add_command(label="Save", command=save_file_handler)
 file_menu.add_command(label="Save As", command=save_as_file_handler)
+file_menu.add_command(label="Add ID to game list", command=add_id_to_list)
 file_menu.add_separator()
 file_menu.add_command(label="Exit", command=exit_app)
 menubar.add_cascade(label="File", menu=file_menu)
@@ -1303,7 +1477,8 @@ update_menu.add_command(label="Update QuickCodes List", command=download_latest_
 update_menu.add_command(label="Update Python Script List", command=download_latest_python_scripts)
 update_menu.add_command(label="Update Lua Script List", command=download_latest_lua_scripts)
 update_menu.add_command(label="Update Built_in_functions", command=update_func)
-update_menu.add_command(label="Update CUSA game list", command=download_latest_CUSA)
+update_menu.add_command(label="Update Game ID  list", command=download_latest_CUSA)
+update_menu.add_command(label="Update Checksum List", command=download_latest_check_scripts)
 menubar.add_cascade(label="Update Cheats", menu=update_menu)
 
 # Help menu
@@ -1313,7 +1488,7 @@ def show_about():
     about_window.geometry("350x150")
     about_window.resizable(False, False)
 
-    tk.Label(about_window, text="Save Editor v1.0", font=("Segoe UI", 12, "bold")).pack(pady=(10, 0))
+    tk.Label(about_window, text="Save Editor v1.1", font=("Segoe UI", 12, "bold")).pack(pady=(10, 0))
     tk.Label(about_window, text="Developed by Alfazari911").pack(pady=(5, 0))
     tk.Label(about_window, text="Github:", font=("Segoe UI", 10)).pack(pady=(10, 0))
 
@@ -1367,7 +1542,7 @@ save_file_var = tk.StringVar(value="No file selected")
 tk.Label(left_frame, text="Save File:", anchor="w").pack(fill="x")
 tk.Label(left_frame, textvariable=save_file_var, fg="blue").pack(fill="x")
 
-tk.Label(left_frame, text="CUSA:", anchor="w").pack(fill="x", pady=(10, 0))
+tk.Label(left_frame, text="Game ID:", anchor="w").pack(fill="x", pady=(10, 0))
 tk.Label(left_frame, textvariable=cusa_var, fg="green").pack(fill="x")
 
 tk.Label(left_frame, text="Game:", anchor="w").pack(fill="x", pady=(10, 0))
