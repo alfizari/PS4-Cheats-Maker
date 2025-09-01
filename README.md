@@ -23,7 +23,7 @@ If you want to share your scripts, make a pull request.
 
 ## ⚠️ Important Note  
 
-Clicking **Update Scripts** will replace any existing scripts you have with those downloaded from GitHub.  
+Clicking **Update Scripts** will replace any existing scripts you have with those downloaded from GitHub if they already exist, it will also create a backup.  
 👉 Please **make a backup** before updating.  
 
 ---
