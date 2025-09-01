@@ -1,0 +1,2 @@
+checksum = get_checksum_md5(save_data, start=0, end=-16) #-1 is end of file, -16 is the 16th byte from the end
+write_offset(-16, checksum, save_data, 16)
