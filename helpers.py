@@ -26,10 +26,94 @@ def read_offset(offset: int, data: bytes, length: int = 4) -> int:
     """Read a value from data at a given offset"""
     return int.from_bytes(data[offset:offset+length], "little")
 
-def write_offset(offset: int, value: int, data: bytearray, length: int = 4) -> None:
-    """Write a value to data at a given offset"""
-    data[offset:offset+length] = value.to_bytes(length, "little")
+def write_offset(offset: int, value, data: bytearray, length: int = None) -> None:
+    """
+    Write a value to data at a given offset.
+    - value can be int, bytes/bytearray, or hex string
+    - length is used only if value is int
+    """
+    if isinstance(value, int):
+        if length is None:
+            length = 4  # default
+        value_bytes = value.to_bytes(length, "little")
+    elif isinstance(value, str):
+        # Handle hex strings like "AA BB CC" or "AABBCC"
+        hex_string = value.replace(" ", "").replace("-", "")
+        value_bytes = bytes.fromhex(hex_string)
+    elif isinstance(value, (bytes, bytearray)):
+        value_bytes = value
+    else:
+        raise TypeError("value must be int, hex string, or bytes/bytearray")
 
+    # Handle negative offset
+    if offset < 0:
+        offset = len(data) + offset
+
+    data[offset:offset+len(value_bytes)] = value_bytes
+
+def search_all_text_simple(search_term, data, encoding='utf-8'):
+    """
+    Simple version that just returns offsets where text is found
+    
+    Args:
+        search_term (str): Text to search for
+        data (bytes/bytearray): Save file data
+        encoding (str): Text encoding (default: 'utf-8')
+    
+    Returns:
+        list: List of offsets where text was found
+        first_match = results[0]      # First match
+        second_match = results[1]     # Second match (if it exists)
+    """
+    offsets = []
+    
+    try:
+        search_bytes = search_term.encode(encoding)
+        if isinstance(data, bytearray):
+            search_data = bytes(data)
+        else:
+            search_data = data
+            
+        offset = 0
+        while True:
+            pos = search_data.find(search_bytes, offset)
+            if pos == -1:
+                break
+            offsets.append(pos)
+            offset = pos + 1
+            
+    except Exception as e:
+        print(f"Search error: {e}")
+    
+    return offsets
+
+
+def search_first_text_simple(search_term, data, encoding='utf-8'):
+    """
+    Simple version that returns only the first offset where text is found
+    
+    Args:
+        search_term (str): Text to search for exmpl # searth_term='alfazari911' #
+        data (bytes/bytearray): Save file data
+        encoding (str): Text encoding (default: 'utf-8')
+    
+    Returns:
+        int or None: First offset where text was found, or None if not found
+    """
+    try:
+        search_bytes = search_term.encode(encoding)
+        if isinstance(data, bytearray):
+            search_data = bytes(data)
+        else:
+            search_data = data
+            
+        pos = search_data.find(search_bytes)
+        return pos if pos != -1 else None
+            
+    except Exception as e:
+        print(f"Search error: {e}")
+        return None
+    
 def write_offset_loop(start_loop_offset: int, end_loop_offset: int, increment_by: int, value: int, data: bytearray, length: int = 4) -> None:
     """
     Write a value to data at each offset between start_loop_offset and end_loop_offset,
@@ -37,6 +121,29 @@ def write_offset_loop(start_loop_offset: int, end_loop_offset: int, increment_by
     """
     for offset in range(start_loop_offset, end_loop_offset + 1, increment_by):
         data[offset:offset + length] = value.to_bytes(length, "little")
+
+def insert_bytes(offset: int, value, data: bytearray) -> None:
+    """
+    Insert bytes at a given offset.
+    - value can be a hex string like "AA BB CC DD" or a bytes/bytearray
+    """
+    if isinstance(value, str):
+        # Convert hex string "AA BB CC DD" -> bytes b"\xAA\xBB\xCC\xDD"
+        value_bytes = bytes.fromhex(value)
+    elif isinstance(value, (bytes, bytearray)):
+        value_bytes = value
+    else:
+        raise TypeError("value must be a hex string or bytes/bytearray")
+
+    data[offset:offset] = value_bytes
+
+def delete_bytes(offset: int, length: int, data: bytearray) -> None:
+    """
+    Delete a range of bytes from data starting at offset.
+    - offset: position to start deleting
+    - length: number of bytes to delete
+    """
+    del data[offset:offset+length]
 
 
 # Extended helper functions
