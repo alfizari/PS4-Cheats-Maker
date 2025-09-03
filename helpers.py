@@ -113,6 +113,39 @@ def search_first_text_simple(search_term, data, encoding='utf-8'):
     except Exception as e:
         print(f"Search error: {e}")
         return None
+
+def write_text_at_offset(offset: int, text: str, data: bytearray, encoding: str = 'utf-8') -> None:
+    """
+    Write a UTF-8 (or other encoding) string into a bytearray at a given offset.
+
+    Args:
+        offset (int): The position in the data to start writing.
+        text (str): The text string to write.
+        data (bytearray): The file data (must be a bytearray so it can be modified).
+        encoding (str): Encoding used to convert text to bytes (default: 'utf-8').
+
+    exmpl write_text_at_offset(0x100, "true", save_data, encoding= 'utf-8)
+
+    Raises:
+        ValueError: If offset is out of range.
+    """
+    try:
+        text_bytes = text.encode(encoding)
+        end = offset + len(text_bytes)
+
+        if offset < 0 or offset > len(data):
+            raise ValueError("Offset is outside the data range.")
+
+        # Expand data if needed
+        if end > len(data):
+            data.extend(b"\x00" * (end - len(data)))
+
+        # Write bytes into the data
+        data[offset:end] = text_bytes
+
+    except Exception as e:
+        print(f"Write error: {e}")
+
     
 def write_offset_loop(start_loop_offset: int, end_loop_offset: int, increment_by: int, value: int, data: bytearray, length: int = 4) -> None:
     """
