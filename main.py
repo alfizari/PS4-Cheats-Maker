@@ -7,13 +7,12 @@ from quickcodes import QuickCodes
 import re
 import asyncio
 from lupa import LuaRuntime
-import helpers 
 import sys
 import requests
 import py7zr
 import shutil
 import webbrowser
-
+import importlib.util
 
 
 
@@ -659,22 +658,43 @@ def run_python_script(path=None):
         messagebox.showerror("Python Error", f"Script execution failed:\n\n{str(e)}")
 
 # Helper function to get all helper functions (from previous code)
+import sys
+import os
+import importlib.util
+
+def load_helpers():
+    """
+    Dynamically load helpers.py from the same folder as the script or exe.
+    """
+    base_path = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else __file__)
+    helpers_path = os.path.join(base_path, "helpers.py")
+
+    if not os.path.exists(helpers_path):
+        raise FileNotFoundError(f"helpers.py not found in {base_path}")
+
+    spec = importlib.util.spec_from_file_location("helpers", helpers_path)
+    helpers = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(helpers)
+    return helpers
+
+
 def get_helper_globals():
-    """Automatically get all helper functions from helpers module"""
+    """Automatically get all helper functions from helpers.py next to the exe/script"""
     try:
- 
+        helpers = load_helpers()
         helper_functions = {}
-        
+
         for name in dir(helpers):
             if not name.startswith('_'):
                 attr = getattr(helpers, name)
                 if callable(attr):
                     helper_functions[name] = attr
-        
+
         return helper_functions
-    except ImportError:
-        print("Warning: helpers module not found")
+    except Exception as e:
+        print(f"Warning: helpers module not found ({e})")
         return {}
+
 
 # Updated run_python_script using automatic helper detection
 def run_python_script_auto(path=None):
