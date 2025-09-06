@@ -6,6 +6,14 @@ My Discord: alfazari911
 If you want to share your scripts, make a pull request.
 
 ---
+## Current Cheats
+* Click Update all on the tool to install the latest cheats
+  
+| CUSA Code             | Game                             | Cheat Type       |
+|------------------------|----------------------------------|------------------|
+| CUSA13285 / CUSA13632 | Hollow Knight - Voidheart Edition | Python scripts   |
+| CUSA39420             | Hollow Knight: Silksong          | Python scripts   |
+
 
 ## ✨ Features  
 
