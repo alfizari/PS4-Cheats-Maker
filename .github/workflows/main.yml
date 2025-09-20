@@ -16,34 +16,34 @@ jobs:
             os: windows-latest
             python-architecture: 'x64'
             spec: src/build.spec
-            artifact: Elden_Ring_Save_Editor_WIN64
+            artifact: Cheats_Maker_WIN64
             artifact-path: dist/
 
           - name: Windows 32-bit
             os: windows-latest
             python-architecture: 'x86'
             spec: src/build_win32.spec
-            artifact: Elden_Ring_Save_Editor_WIN32
+            artifact: Cheats_Maker_WIN32
             artifact-path: dist/Elden_Ring_Save_Editor_WIN32.exe
 
           - name: Linux x86_64
             os: ubuntu-latest
             python-architecture: 'x64'
             spec: src/build.spec
-            artifact: Elden_Ring_Save_Editor_LINUX_x86_64
+            artifact: Cheats_Maker_LINUX_x86_64
             artifact-path: dist/
 
           - name: macOS Silicon
             os: macos-latest
             python-architecture: 'arm64'
             spec: src/build_mac.spec
-            artifact: Elden_Ring_Save_Editor_MAC-Silicon
+            artifact: Cheats_Maker_MAC-Silicon
 
           - name: macOS Intel
             os: macos-13
             python-architecture: 'x64'
             spec: src/build_mac.spec
-            artifact: Elden_Ring_Save_Editor_MAC-Intel
+            artifact: Cheats_Maker_MAC-Intel
 
     runs-on: ${{ matrix.os }}
     steps:
