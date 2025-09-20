@@ -24,7 +24,7 @@ jobs:
             python-architecture: 'x86'
             spec: main.spec
             artifact: Cheats_Maker_WIN32
-            artifact-path: dist/Elden_Ring_Save_Editor_WIN32.exe
+            artifact-path: dist/
 
           - name: Linux x86_64
             os: ubuntu-latest
@@ -38,12 +38,14 @@ jobs:
             python-architecture: 'arm64'
             spec: main.spec
             artifact: Cheats_Maker_MAC-Silicon
+            artifact-path: dist/Cheats_Maker_MAC-Silicon.zip
 
           - name: macOS Intel
             os: macos-13
             python-architecture: 'x64'
             spec: main.spec
             artifact: Cheats_Maker_MAC-Intel
+            artifact-path: dist/Cheats_Maker_MAC-Intel.zip
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -64,13 +66,17 @@ jobs:
         env:
           PYTHONPATH: ${{ runner.workspace }}/src
 
+      # Package macOS apps into .zip
       - name: Package macOS App
         if: startsWith(matrix.os, 'macos')
         run: |
-          cd dist && zip -r ${{ matrix.artifact }}.zip *.app && mv ${{ matrix.artifact }}.zip ../
+          cd dist
+          APP_NAME=$(ls *.app | head -n 1)
+          zip -r "${{ matrix.artifact }}.zip" "$APP_NAME"
+          mv "${{ matrix.artifact }}.zip" ../
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact-path || format('{0}.zip', matrix.artifact) }}
+          path: ${{ matrix.artifact-path }}
