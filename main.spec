@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
+import sys
 
 datas = []
 binaries = []
@@ -44,3 +45,4 @@ exe = EXE(
     entitlements_file=None,
     icon=['logo/logo.icns'] if sys.platform == "darwin" else ['logo\\logo.ico'],
 )
+
