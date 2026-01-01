@@ -101,7 +101,7 @@ pip install tkinter asyncio lupa requests py7zr datetime
 
 Use **PyInstaller**:  
 ```bash
-pyinstaller --noconsole --onefile --icon=logo/logo.ico --collect-all lupa main.py
+pip install aiofiles lupa py7zr requests
 ```
 
 ---
