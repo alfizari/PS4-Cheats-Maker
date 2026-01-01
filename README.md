@@ -84,8 +84,7 @@ print("your message here")
 You need **Python 3** installed.  
 
 **Dependencies:**  
-- tkinter  
-- asyncio  
+- aiofiles
 - lupa  
 - requests  
 - py7zr  
