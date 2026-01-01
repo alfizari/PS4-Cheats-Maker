@@ -92,7 +92,7 @@ You need **Python 3** installed.
 
 Install them via pip:  
 ```bash
-pip install tkinter asyncio lupa requests py7zr datetime
+pip install aiofiles lupa py7zr requests
 ```
 
 ---
